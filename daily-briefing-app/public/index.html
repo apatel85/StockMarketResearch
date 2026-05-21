@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Market Briefing</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Market Briefing</h1>
+        <div id="status-indicator" class="status-live">Live</div>
+    </header>
+
+    <main>
+        <section id="analysis-section" class="card">
+            <h2>Morning Briefing</h2>
+            <div id="analysis-content">Loading analysis...</div>
+        </section>
+
+        <section id="indices-section" class="card">
+            <h2>Key Indices & Futures</h2>
+            <div id="indices-grid" class="grid"></div>
+        </section>
+
+        <section id="rates-section" class="card">
+            <h2>Rates & VIX</h2>
+            <div id="rates-grid" class="grid"></div>
+        </section>
+
+        <section id="sectors-section" class="card">
+            <h2>Top Sectors</h2>
+            <div id="sectors-grid" class="grid"></div>
+        </section>
+
+        <section id="news-section" class="card">
+            <h2>Real-Time News Alerts</h2>
+            <ul id="news-list"></ul>
+        </section>
+
+        <section id="strategy-section" class="card">
+             <h2>Strategy & Probability</h2>
+             <div id="strategy-content">
+                  <div class="probability">Market Direction Confidence: <span id="confidence-level">High</span> (Bullish bias based on pre-market momentum)</div>
+                  <ul id="thought-leader-tips">
+                      <li>Focus on Tech (XLK) and Financials (XLF) today based on overnight gap-up.</li>
+                      <li>Watch key levels: S&P 500 pivot at 5100. Break above targets 5150.</li>
+                      <li>VIX below 14 suggests low volatility environment; swing long setups preferred.</li>
+                  </ul>
+             </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'));
+        }
+    </script>
+</body>
+</html>
