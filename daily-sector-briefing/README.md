@@ -74,11 +74,18 @@ python scripts/refresh_sp500.py
 EDT (the `--session auto` guard fires exactly once per intended time), then commits the
 archive and publishes `reports/` to GitHub Pages.
 
+It also runs a **PM briefing automatically whenever app changes land on the default branch**
+(e.g. when you merge a PR), so the dashboard refreshes without touching the Actions UI. The
+bot's archive commits carry `[skip ci]`, so this never loops.
+
 **To enable:**
 1. Repo **Settings → Secrets and variables → Actions → New repository secret**:
    `POLYGON_API_KEY = <your key>`.
 2. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 3. (Optional) Trigger manually via the **workflow_dispatch** "Run workflow" button.
+
+**View it on the web:** after a successful run, the report is published to GitHub Pages at
+`https://<owner>.github.io/<repo>/` (root serves the latest briefing via `index.html`).
 
 ## Data freshness guard
 

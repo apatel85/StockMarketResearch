@@ -41,6 +41,8 @@ def save_briefing(payload: dict, html: str, day: str, session: str,
     html_path = REPORTS_DIR / f"{stamp}.html"
     html_path.write_text(html)
     (REPORTS_DIR / "latest.html").write_text(html)
+    # index.html so the GitHub Pages root URL serves the latest briefing directly.
+    (REPORTS_DIR / "index.html").write_text(html)
 
     pruned = prune(retention_days)
     return {"json": str(json_path), "html": str(html_path), "pruned": pruned}
