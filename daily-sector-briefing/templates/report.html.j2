@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Sector Briefing — {{ as_of }} {{ session|upper }}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--line:#21262d;--fg:#e6edf3;--mut:#8b949e;
+        --up:#3fb950;--dn:#f85149;--accent:#58a6ff;--warn:#d29922;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  header{padding:16px 20px;border-bottom:1px solid var(--line);
+         display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  h1{font-size:18px;margin:0}
+  .meta{color:var(--mut);font-size:12px}
+  .badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .ok{background:rgba(63,185,80,.15);color:var(--up)}
+  .stale{background:rgba(248,81,73,.15);color:var(--dn)}
+  nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 16px;border-bottom:1px solid var(--line);
+      position:sticky;top:0;background:var(--bg);z-index:5}
+  nav button{background:transparent;border:1px solid var(--line);color:var(--mut);
+             padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  nav button.active{color:var(--fg);border-color:var(--accent);background:rgba(88,166,255,.1)}
+  main{padding:18px 20px;max-width:1200px;margin:0 auto}
+  .tab{display:none} .tab.active{display:block}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .card .k{color:var(--mut);font-size:12px} .card .v{font-size:20px;font-weight:600;margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .up{color:var(--up)} .dn{color:var(--dn)} .mut{color:var(--mut)}
+  .pill{display:inline-block;padding:1px 7px;border-radius:8px;font-size:11px;font-weight:600}
+  .pill.long{background:rgba(63,185,80,.15);color:var(--up)}
+  .pill.short{background:rgba(248,81,73,.15);color:var(--dn)}
+  .pill.lead{background:rgba(63,185,80,.12);color:var(--up)}
+  .pill.lag{background:rgba(248,81,73,.12);color:var(--dn)}
+  .pill.improve{background:rgba(88,166,255,.12);color:var(--accent)}
+  .pill.weaken{background:rgba(210,153,34,.12);color:var(--warn)}
+  .conf{height:7px;border-radius:4px;background:var(--line);overflow:hidden;min-width:70px}
+  .conf>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--up))}
+  h2{font-size:15px;border-left:3px solid var(--accent);padding-left:8px;margin:22px 0 6px}
+  h3{font-size:13px;color:var(--mut);margin:16px 0 4px}
+  .idea{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0}
+  .idea .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .idea .sym{font-size:16px;font-weight:700}
+  .lv{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0;color:var(--mut)}
+  .lv b{color:var(--fg)}
+  .note{color:var(--mut);font-size:12px}
+  ul.notes{margin:6px 0 0;padding-left:18px} ul.notes li{color:var(--mut)}
+  .strat{border-top:1px dashed var(--line);margin-top:8px;padding-top:8px}
+  .disclaimer{color:var(--mut);font-size:11px;border-top:1px solid var(--line);
+              margin-top:30px;padding-top:12px}
+  canvas{max-height:300px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📊 Daily Sector Briefing</h1>
+    <div class="meta">{{ as_of }} · {{ session_label }} · provider: {{ provider }} ·
+      generated {{ generated_at }}</div>
+  </div>
+  <div>
+    {% if freshness.ok %}<span class="badge ok">DATA FRESH · {{ freshness.expected_day }}</span>
+    {% else %}<span class="badge stale">DATA FLAGGED</span>{% endif %}
+  </div>
+</header>
+
+<nav id="nav"></nav>
+<main>
+  <!-- 1. OVERVIEW -->
+  <section class="tab" data-tab="Overview">
+    <h2>Market Pulse</h2>
+    <div class="grid">
+      {% for q in market_pulse.indices + market_pulse.futures %}
+      <div class="card"><div class="k">{{ q.symbol }}</div>
+        <div class="v {{ 'up' if q.chg_1d>=0 else 'dn' }}">{{ q.chg_1d|pct }}</div>
+        <div class="note">{{ q.last|num }}</div></div>
+      {% endfor %}
+      <div class="card"><div class="k">VIX ({{ market_pulse.vix.regime }})</div>
+        <div class="v">{{ market_pulse.vix.last|num }}</div></div>
+      {% for q in market_pulse.rates + market_pulse.intermarket %}
+      <div class="card"><div class="k">{{ q.symbol }}</div>
+        <div class="v {{ 'up' if q.chg_1d>=0 else 'dn' }}">{{ q.chg_1d|pct }}</div></div>
+      {% endfor %}
+    </div>
+    {% if market_pulse.breadth %}
+    <h2>Breadth</h2>
+    <div class="grid">
+      <div class="card"><div class="k">% above 50DMA</div><div class="v">{{ market_pulse.breadth.pct_above_50|num }}</div></div>
+      <div class="card"><div class="k">% above 200DMA</div><div class="v">{{ market_pulse.breadth.pct_above_200|num }}</div></div>
+      <div class="card"><div class="k">Advancers</div><div class="v up">{{ market_pulse.breadth.adv }}</div></div>
+      <div class="card"><div class="k">Decliners</div><div class="v dn">{{ market_pulse.breadth.decl }}</div></div>
+    </div>{% endif %}
+    {% if session_note %}<h2>Session Notes</h2><p class="note">{{ session_note }}</p>{% endif %}
+  </section>
+
+  <!-- 2. SECTORS -->
+  <section class="tab" data-tab="Sectors">
+    <h2>Sector Performance (1-Day)</h2>
+    <canvas id="sectorChart"></canvas>
+    {% if sectors.hot_day %}
+    <p>🔥 Hot today: <b class="up">{{ sectors.hot_day.hot.sector }}</b> ({{ sectors.hot_day.hot.chg|pct }})
+       · 🧊 Cold: <b class="dn">{{ sectors.hot_day.cold.sector }}</b> ({{ sectors.hot_day.cold.chg|pct }})</p>{% endif %}
+    {% if sectors.hot_week %}
+    <p>📅 Hot this week: <b class="up">{{ sectors.hot_week.hot.sector }}</b> ({{ sectors.hot_week.hot.chg|pct }})
+       · Cold: <b class="dn">{{ sectors.hot_week.cold.sector }}</b> ({{ sectors.hot_week.cold.chg|pct }})</p>{% endif %}
+    <table><thead><tr><th>Sector</th><th>ETF</th><th>1D</th><th>1W</th><th>1M</th></tr></thead><tbody>
+      {% for r in sectors.etf_perf %}<tr><td>{{ r.sector }}</td><td class="mut">{{ r.etf }}</td>
+      <td class="{{ 'up' if r.chg_1d>=0 else 'dn' }}">{{ r.chg_1d|pct }}</td>
+      <td class="{{ 'up' if r.chg_5d>=0 else 'dn' }}">{{ r.chg_5d|pct }}</td>
+      <td>{{ r.chg_20d|pct }}</td></tr>{% endfor %}
+    </tbody></table>
+
+    <h2>Sub-sectors (constituent median, 1-Day)</h2>
+    <table><thead><tr><th>Sector</th><th>Sub-sector</th><th>Median</th><th>% Up</th><th>#</th></tr></thead><tbody>
+      {% for r in sectors.subsectors %}<tr><td class="mut">{{ r.sector }}</td><td>{{ r.industry }}</td>
+      <td class="{{ 'up' if r.median>=0 else 'dn' }}">{{ r.median|pct }}</td>
+      <td>{{ r.pct_up|num }}%</td><td class="mut">{{ r.count }}</td></tr>{% endfor %}
+    </tbody></table>
+
+    {% if sectors.rrg %}
+    <h2>Rotation (RRG quadrants vs SPY)</h2>
+    <table><thead><tr><th>Sector</th><th>Rel. Strength</th><th>Momentum</th><th>Quadrant</th></tr></thead><tbody>
+      {% for r in sectors.rrg %}<tr><td>{{ r.sector }}</td>
+      <td class="{{ 'up' if r.rs>=0 else 'dn' }}">{{ r.rs|pct }}</td>
+      <td class="{{ 'up' if r.momentum>=0 else 'dn' }}">{{ r.momentum|pct }}</td>
+      <td><span class="pill {{ {'Leading':'lead','Lagging':'lag','Improving':'improve','Weakening':'weaken'}[r.quadrant] }}">{{ r.quadrant }}</span></td></tr>{% endfor %}
+    </tbody></table>{% endif %}
+  </section>
+
+  <!-- 3. WINNERS & LOSERS -->
+  <section class="tab" data-tab="Winners & Losers">
+    {% macro mtable(rows) %}
+    <table><thead><tr><th>#</th><th>Symbol</th><th>Sector</th><th>1D</th><th>Close</th><th>Catalyst</th></tr></thead><tbody>
+      {% for r in rows %}<tr><td class="mut">{{ loop.index }}</td><td><b>{{ r.symbol }}</b><div class="note">{{ r.name }}</div></td>
+      <td class="mut">{{ r.sector }}</td><td class="{{ 'up' if r.chg_1d>=0 else 'dn' }}">{{ r.chg_1d|pct }}</td>
+      <td>{{ r.close|num }}</td><td class="note">{{ r.catalyst }}</td></tr>{% endfor %}
+    </tbody></table>{% endmacro %}
+    <h2>Top 10 Winners — Day</h2>{{ mtable(winners) }}
+    <h2>Top 10 Losers — Day</h2>{{ mtable(losers) }}
+    <h2>Top 10 Winners — Week</h2>{{ mtable(winners_week) }}
+    <h2>Top 10 Losers — Week</h2>{{ mtable(losers_week) }}
+  </section>
+
+  <!-- 4. OPTIONS FLOW -->
+  <section class="tab" data-tab="Options Flow">
+    <h2>Options Positioning</h2>
+    <p class="note">P/C = put/call volume ratio (low = call-heavy/bullish). Vol/OI flags unusual activity.
+       Snapshot data — see disclaimer on live flow.</p>
+    <table><thead><tr><th>Symbol</th><th>Bias</th><th>P/C Vol</th><th>ATM IV</th><th>Exp. Move</th><th>Unusual</th></tr></thead><tbody>
+      {% for r in options.table %}<tr><td><b>{{ r.symbol }}</b></td>
+      <td><span class="pill {{ 'long' if r.bias=='bullish' else 'short' if r.bias=='bearish' else '' }}">{{ r.bias }}</span></td>
+      <td>{{ r.pc_ratio_vol|num }}</td><td>{{ (r.atm_iv*100)|num if r.atm_iv else '—' }}{{ '%' if r.atm_iv }}</td>
+      <td>{{ r.expected_move_pct|num }}%</td><td class="mut">{{ r.unusual_count }}</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+
+  <!-- 5. IDEAS (longs & shorts) -->
+  <section class="tab" data-tab="Long & Short Ideas">
+    {% macro ideatable(rows) %}
+    <table><thead><tr><th>Symbol</th><th>Bias</th><th>Confidence</th><th>Drivers</th></tr></thead><tbody>
+      {% for r in rows %}<tr><td><b>{{ r.symbol }}</b> <span class="note">{{ r.sector }}</span></td>
+      <td><span class="pill {{ r.bias }}">{{ r.bias }}</span></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="conf"><i style="width:{{ r.confidence }}%"></i></div>{{ r.confidence }}%</div></td>
+      <td class="note">{{ r.notes[:3]|join('; ') }}</td></tr>{% endfor %}
+    </tbody></table>{% endmacro %}
+    <h2>Long Candidates</h2>{{ ideatable(longs) }}
+    <h2>Short Candidates</h2>{{ ideatable(shorts) }}
+  </section>
+
+  <!-- 6. TRADE SETUPS -->
+  <section class="tab" data-tab="Trade Setups">
+    <h2>Ranked Setups (entry / stop / target + options)</h2>
+    {% for r in ideas %}
+    <div class="idea">
+      <div class="hd">
+        <div><span class="sym">{{ r.symbol }}</span> <span class="note">{{ r.name }} · {{ r.sector }}</span></div>
+        <div><span class="pill {{ r.bias }}">{{ r.bias|upper }}</span>
+          <span class="mut">conf {{ r.confidence }}%</span>
+          {% if r.earnings_soon %}<span class="pill weaken">earnings soon</span>{% endif %}</div>
+      </div>
+      {% if r.levels %}
+      <div class="lv"><span>Entry <b>{{ r.levels.entry|num }}</b></span>
+        <span>Stop <b class="dn">{{ r.levels.stop|num }}</b></span>
+        <span>Target <b class="up">{{ r.levels.target|num }}</b></span>
+        <span>R:R <b>{{ r.levels.rr }}</b></span></div>{% endif %}
+      <ul class="notes">{% for n in r.notes %}<li>{{ n }}</li>{% endfor %}</ul>
+      <div class="strat"><b>Top 3 option strategies:</b>
+        <ol>{% for s in r.option_strategies %}<li><b>{{ s.name }}</b> <span class="note">[{{ s.tenor }}]</span> — {{ s.rationale }}</li>{% endfor %}</ol>
+      </div>
+    </div>{% endfor %}
+  </section>
+
+  <!-- 7. FUTURES & LEVELS -->
+  <section class="tab" data-tab="Futures & Levels">
+    <h2>ES / NQ Key Levels</h2>
+    <div class="grid">
+      {% for k in ['ES','NQ'] %}{% set f = futures[k] %}{% if f.available %}
+      <div class="card"><div class="k">{{ f.symbol }}</div>
+        <div class="v">{{ f.last|num }}</div>
+        <div class="note">PDH {{ f.prior_high|num }} · PDL {{ f.prior_low|num }}</div>
+        <div class="note">ATR {{ f.atr|num }} · range {{ f.expected_range[0]|num }}–{{ f.expected_range[1]|num }}</div>
+      </div>{% endif %}{% endfor %}
+      {% if futures.VIX_implied.available %}
+      <div class="card"><div class="k">VIX-implied daily move</div>
+        <div class="v">±{{ futures.VIX_implied.implied_daily_move_pct|num }}%</div>
+        <div class="note">SPX band {{ futures.VIX_implied.implied_band[0]|num }}–{{ futures.VIX_implied.implied_band[1]|num }}</div></div>{% endif %}
+      {% if futures.gamma_flip.available %}
+      <div class="card"><div class="k">SPX gamma-flip proxy</div>
+        <div class="v">{{ futures.gamma_flip.proxy_level|num }}</div>
+        <div class="note">{{ futures.gamma_flip.note }}</div></div>{% endif %}
+    </div>
+  </section>
+
+  <!-- 8. WATCHLIST -->
+  <section class="tab" data-tab="Watchlist">
+    <h2>To Monitor</h2>
+    <h3>Sectors</h3><p>{{ watchlist.sectors|join(', ') }}</p>
+    <h3>Sub-sectors</h3><p>{{ watchlist.subsectors|join(', ') }}</p>
+    <h3>Stocks</h3><p>{{ watchlist.stocks|join(', ') }}</p>
+  </section>
+
+  <!-- 9. ACCURACY -->
+  <section class="tab" data-tab="Accuracy">
+    <h2>Signal Accuracy (rolling archive)</h2>
+    {% if accuracy.available %}
+    <div class="grid">
+      <div class="card"><div class="k">Overall hit-rate</div><div class="v">{{ (accuracy.hit_rate*100)|num }}%</div><div class="note">n={{ accuracy.n }}</div></div>
+      <div class="card"><div class="k">Long hit-rate</div><div class="v up">{{ (accuracy.hit_rate_long*100)|num if accuracy.hit_rate_long is not none else '—' }}%</div></div>
+      <div class="card"><div class="k">Short hit-rate</div><div class="v dn">{{ (accuracy.hit_rate_short*100)|num if accuracy.hit_rate_short is not none else '—' }}%</div></div>
+    </div>
+    <h3>By confidence bucket</h3>
+    <table><thead><tr><th>Bucket</th><th>Hit-rate</th><th>n</th></tr></thead><tbody>
+      {% for b,v in accuracy.by_confidence.items() %}<tr><td>{{ b }}</td><td>{{ (v.hit_rate*100)|num }}%</td><td class="mut">{{ v.n }}</td></tr>{% endfor %}
+    </tbody></table>
+    {% else %}<p class="note">Not enough archived sessions yet — accuracy populates as the 30-day history builds.</p>{% endif %}
+
+    {% if outofbox %}<h2>Out-of-the-box signals</h2><ul class="notes">{% for o in outofbox %}<li>{{ o }}</li>{% endfor %}</ul>{% endif %}
+  </section>
+
+  <p class="disclaimer">{{ disclaimer }}</p>
+</main>
+
+<script>
+  const sectorData = {{ sector_chart_json|safe }};
+  const tabs = [...document.querySelectorAll('.tab')];
+  const nav = document.getElementById('nav');
+  tabs.forEach((t,i)=>{
+    const b=document.createElement('button');
+    b.textContent=t.dataset.tab; if(i===0)b.classList.add('active');
+    b.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));
+      [...nav.children].forEach(x=>x.classList.remove('active'));
+      t.classList.add('active'); b.classList.add('active'); window.scrollTo(0,0);};
+    nav.appendChild(b);
+  });
+  if(tabs[0]) tabs[0].classList.add('active');
+  if(sectorData && sectorData.labels && window.Chart){
+    new Chart(document.getElementById('sectorChart'),{
+      type:'bar',
+      data:{labels:sectorData.labels,datasets:[{data:sectorData.values,
+        backgroundColor:sectorData.values.map(v=>v>=0?'#3fb950':'#f85149')}]},
+      options:{plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e'}}}}
+    });
+  }
+</script>
+</body>
+</html>

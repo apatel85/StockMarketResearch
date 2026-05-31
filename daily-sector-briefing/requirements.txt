@@ -1,0 +1,15 @@
+# Core analysis stack
+pandas>=2.1
+numpy>=1.26
+PyYAML>=6.0
+Jinja2>=3.1
+requests>=2.31
+
+# Market calendar (NYSE trading-day / holiday logic)
+pandas-market-calendars>=4.3
+
+# Equity / options data fallback (options chains, fundamentals, pre-market)
+yfinance>=0.2.40
+
+# Testing
+pytest>=7.4

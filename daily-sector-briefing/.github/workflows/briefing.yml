@@ -1,0 +1,80 @@
+name: Daily Sector Briefing
+
+# Cron is UTC. These four windows cover 5:00 AM and 5:00 PM ET under both EST and EDT;
+# the script's --session auto guard runs exactly once per intended ET time (skips others).
+on:
+  schedule:
+    - cron: "0 9 * * 1-5"    # 5am ET (EDT) / 4am ET (EST -> skipped)
+    - cron: "0 10 * * 1-5"   # 5am ET (EST) / 6am ET (EDT -> skipped)
+    - cron: "0 21 * * 1-5"   # 5pm ET (EDT) / 4pm ET (EST -> skipped)
+    - cron: "0 22 * * 1-5"   # 5pm ET (EST) / 6pm ET (EDT -> skipped)
+  workflow_dispatch:
+    inputs:
+      session:
+        description: "Session to run (am, pm, or auto)"
+        default: "pm"
+        type: choice
+        options: [am, pm, auto]
+
+permissions:
+  contents: write   # commit the archived report/data
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sector-briefing
+  cancel-in-progress: false
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: daily-sector-briefing
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate briefing
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+        run: |
+          python -m src.run_briefing --session "${{ github.event.inputs.session || 'auto' }}"
+
+      - name: Commit archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data reports
+          if ! git diff --cached --quiet; then
+            git commit -m "Sector briefing $(date -u +%Y-%m-%d) [skip ci]"
+            git push
+          else
+            echo "No new briefing artifacts to commit."
+          fi
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sector-briefing
+          path: daily-sector-briefing/reports/latest.html
+
+  # Publish reports/ to GitHub Pages (enable Pages -> GitHub Actions in repo settings).
+  deploy-pages:
+    needs: briefing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: daily-sector-briefing/reports
+      - id: deployment
+        uses: actions/deploy-pages@v4

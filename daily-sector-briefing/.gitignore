@@ -1,0 +1,13 @@
+# Secrets — never commit the real key
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Local data cache (committed archive lives in data/ and reports/, but cache is local)
+.cache/
+*.log

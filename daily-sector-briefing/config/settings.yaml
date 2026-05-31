@@ -1,0 +1,62 @@
+# Daily Sector Briefing — configuration
+# Provider: hybrid (Polygon free for EOD equities + yfinance for options/fundamentals),
+#           polygon (Polygon only), or yfinance (yfinance only).
+provider: hybrid
+
+retention_days: 30          # data/ and reports/ older than this are pruned
+
+universe:
+  sp500_csv: config/sp500.csv
+  # 11 SPDR sector ETFs (GICS sectors)
+  sector_etfs:
+    XLK:  Information Technology
+    XLV:  Health Care
+    XLF:  Financials
+    XLY:  Consumer Discretionary
+    XLC:  Communication Services
+    XLI:  Industrials
+    XLP:  Consumer Staples
+    XLE:  Energy
+    XLU:  Utilities
+    XLRE: Real Estate
+    XLB:  Materials
+  # Macro / index / futures context symbols
+  macro:
+    indices:   ["^GSPC", "^NDX", "^DJI", "^RUT"]
+    futures:   ["ES=F", "NQ=F"]
+    volatility: ["^VIX"]
+    rates:     ["^TNX", "^TYX"]
+    intermarket: ["DX-Y.NYB", "CL=F", "GC=F"]
+  benchmark: SPY            # relative-strength benchmark
+
+movers:
+  top_n: 10                 # top/bottom N winners & losers
+  min_price: 5.0            # ignore sub-$5 names
+  min_dollar_volume: 5.0e6  # liquidity floor (price * volume)
+
+indicators:
+  sma_windows: [20, 50, 200]
+  rsi_period: 14
+  atr_period: 14
+  macd: {fast: 12, slow: 26, signal: 9}
+  volume_surge_lookback: 20
+
+# Composite confidence weights (must sum to 1.0)
+scoring:
+  weights:
+    technical:   0.35
+    fundamental: 0.20
+    sentiment:   0.15
+    flow:        0.30
+  long_threshold: 60        # confidence % to surface as a long idea
+  short_threshold: 60       # confidence % to surface as a short idea
+  max_ideas: 12
+
+options:
+  iv_rank_lookback_days: 252
+  unusual_vol_oi_ratio: 2.0  # day volume / open interest above this = unusual
+  near_expiries: 3           # nearest N expiries considered for flow
+
+freshness:
+  max_stale_days: 0          # PM: last bar must equal expected last trading day
+  abort_on_stale: true
