@@ -1,0 +1,42 @@
+# GICS sector -> representative sub-sectors, each with a proxy industry ETF used to
+# cross-check the constituent-aggregated sub-sector return. Sub-sector membership of
+# individual stocks is taken from the `industry` column in sp500.csv (GICS industry).
+Information Technology:
+  Semiconductors: SMH
+  Software: IGV
+  Hardware & Equipment: XLK
+Health Care:
+  Biotechnology: XBI
+  Pharmaceuticals: PJP
+  Medical Devices: IHI
+  Providers & Services: IHF
+Financials:
+  Banks: KBE
+  Regional Banks: KRE
+  Capital Markets: IAI
+  Insurance: KIE
+Consumer Discretionary:
+  Homebuilders: XHB
+  Retail: XRT
+  Autos: CARZ
+Communication Services:
+  Media & Entertainment: PBS
+  Telecom: XTL
+Industrials:
+  Aerospace & Defense: ITA
+  Transportation: IYT
+Consumer Staples:
+  Food & Beverage: PBJ
+  Household Products: XLP
+Energy:
+  Oil & Gas E&P: XOP
+  Equipment & Services: OIH
+Utilities:
+  Utilities: XLU
+Real Estate:
+  REITs: XLRE
+  Homebuilding/Construction: ITB
+Materials:
+  Metals & Mining: XME
+  Gold Miners: GDX
+  Chemicals: XLB

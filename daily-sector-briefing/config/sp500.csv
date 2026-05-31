@@ -1,0 +1,110 @@
+symbol,name,sector,industry
+AAPL,Apple Inc.,Information Technology,Hardware & Equipment
+MSFT,Microsoft Corp.,Information Technology,Software
+NVDA,NVIDIA Corp.,Information Technology,Semiconductors
+AVGO,Broadcom Inc.,Information Technology,Semiconductors
+AMD,Advanced Micro Devices,Information Technology,Semiconductors
+QCOM,Qualcomm Inc.,Information Technology,Semiconductors
+TXN,Texas Instruments,Information Technology,Semiconductors
+MU,Micron Technology,Information Technology,Semiconductors
+INTC,Intel Corp.,Information Technology,Semiconductors
+ORCL,Oracle Corp.,Information Technology,Software
+CRM,Salesforce Inc.,Information Technology,Software
+ADBE,Adobe Inc.,Information Technology,Software
+NOW,ServiceNow Inc.,Information Technology,Software
+PANW,Palo Alto Networks,Information Technology,Software
+SNPS,Synopsys Inc.,Information Technology,Software
+CSCO,Cisco Systems,Information Technology,Hardware & Equipment
+ACN,Accenture plc,Information Technology,Software
+LLY,Eli Lilly & Co.,Health Care,Pharmaceuticals
+JNJ,Johnson & Johnson,Health Care,Pharmaceuticals
+MRK,Merck & Co.,Health Care,Pharmaceuticals
+PFE,Pfizer Inc.,Health Care,Pharmaceuticals
+ABBV,AbbVie Inc.,Health Care,Pharmaceuticals
+BMY,Bristol-Myers Squibb,Health Care,Pharmaceuticals
+AMGN,Amgen Inc.,Health Care,Biotechnology
+GILD,Gilead Sciences,Health Care,Biotechnology
+VRTX,Vertex Pharmaceuticals,Health Care,Biotechnology
+REGN,Regeneron Pharmaceuticals,Health Care,Biotechnology
+MRNA,Moderna Inc.,Health Care,Biotechnology
+UNH,UnitedHealth Group,Health Care,Providers & Services
+CVS,CVS Health Corp.,Health Care,Providers & Services
+ISRG,Intuitive Surgical,Health Care,Medical Devices
+MDT,Medtronic plc,Health Care,Medical Devices
+ABT,Abbott Laboratories,Health Care,Medical Devices
+TMO,Thermo Fisher Scientific,Health Care,Medical Devices
+JPM,JPMorgan Chase,Financials,Banks
+BAC,Bank of America,Financials,Banks
+WFC,Wells Fargo,Financials,Banks
+C,Citigroup Inc.,Financials,Banks
+USB,U.S. Bancorp,Financials,Regional Banks
+PNC,PNC Financial Services,Financials,Regional Banks
+TFC,Truist Financial,Financials,Regional Banks
+GS,Goldman Sachs,Financials,Capital Markets
+MS,Morgan Stanley,Financials,Capital Markets
+SCHW,Charles Schwab,Financials,Capital Markets
+BLK,BlackRock Inc.,Financials,Capital Markets
+CME,CME Group,Financials,Capital Markets
+BRK.B,Berkshire Hathaway,Financials,Insurance
+PGR,Progressive Corp.,Financials,Insurance
+CB,Chubb Ltd.,Financials,Insurance
+V,Visa Inc.,Financials,Capital Markets
+MA,Mastercard Inc.,Financials,Capital Markets
+AMZN,Amazon.com Inc.,Consumer Discretionary,Retail
+TSLA,Tesla Inc.,Consumer Discretionary,Autos
+HD,Home Depot,Consumer Discretionary,Retail
+LOW,Lowe's Cos.,Consumer Discretionary,Retail
+MCD,McDonald's Corp.,Consumer Discretionary,Retail
+NKE,Nike Inc.,Consumer Discretionary,Retail
+SBUX,Starbucks Corp.,Consumer Discretionary,Retail
+BKNG,Booking Holdings,Consumer Discretionary,Retail
+DHI,D.R. Horton,Consumer Discretionary,Homebuilders
+LEN,Lennar Corp.,Consumer Discretionary,Homebuilders
+F,Ford Motor Co.,Consumer Discretionary,Autos
+GM,General Motors,Consumer Discretionary,Autos
+GOOGL,Alphabet Inc. Class A,Communication Services,Media & Entertainment
+META,Meta Platforms,Communication Services,Media & Entertainment
+NFLX,Netflix Inc.,Communication Services,Media & Entertainment
+DIS,Walt Disney Co.,Communication Services,Media & Entertainment
+CMCSA,Comcast Corp.,Communication Services,Media & Entertainment
+T,AT&T Inc.,Communication Services,Telecom
+VZ,Verizon Communications,Communication Services,Telecom
+TMUS,T-Mobile US,Communication Services,Telecom
+GE,GE Aerospace,Industrials,Aerospace & Defense
+BA,Boeing Co.,Industrials,Aerospace & Defense
+RTX,RTX Corp.,Industrials,Aerospace & Defense
+LMT,Lockheed Martin,Industrials,Aerospace & Defense
+CAT,Caterpillar Inc.,Industrials,Transportation
+DE,Deere & Co.,Industrials,Transportation
+UPS,United Parcel Service,Industrials,Transportation
+UNP,Union Pacific,Industrials,Transportation
+HON,Honeywell International,Industrials,Aerospace & Defense
+PG,Procter & Gamble,Consumer Staples,Household Products
+KO,Coca-Cola Co.,Consumer Staples,Food & Beverage
+PEP,PepsiCo Inc.,Consumer Staples,Food & Beverage
+COST,Costco Wholesale,Consumer Staples,Food & Beverage
+WMT,Walmart Inc.,Consumer Staples,Food & Beverage
+MDLZ,Mondelez International,Consumer Staples,Food & Beverage
+CL,Colgate-Palmolive,Consumer Staples,Household Products
+XOM,Exxon Mobil,Energy,Oil & Gas E&P
+CVX,Chevron Corp.,Energy,Oil & Gas E&P
+COP,ConocoPhillips,Energy,Oil & Gas E&P
+EOG,EOG Resources,Energy,Oil & Gas E&P
+SLB,Schlumberger Ltd.,Energy,Equipment & Services
+HAL,Halliburton Co.,Energy,Equipment & Services
+NEE,NextEra Energy,Utilities,Utilities
+DUK,Duke Energy,Utilities,Utilities
+SO,Southern Co.,Utilities,Utilities
+D,Dominion Energy,Utilities,Utilities
+AEP,American Electric Power,Utilities,Utilities
+PLD,Prologis Inc.,Real Estate,REITs
+AMT,American Tower,Real Estate,REITs
+EQIX,Equinix Inc.,Real Estate,REITs
+PSA,Public Storage,Real Estate,REITs
+O,Realty Income,Real Estate,REITs
+LIN,Linde plc,Materials,Chemicals
+SHW,Sherwin-Williams,Materials,Chemicals
+APD,Air Products & Chemicals,Materials,Chemicals
+FCX,Freeport-McMoRan,Materials,Metals & Mining
+NEM,Newmont Corp.,Materials,Gold Miners
+NUE,Nucor Corp.,Materials,Metals & Mining
