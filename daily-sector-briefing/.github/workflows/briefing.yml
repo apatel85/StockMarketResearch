@@ -15,6 +15,12 @@ on:
         default: "pm"
         type: choice
         options: [am, pm, auto]
+  # Run a PM briefing automatically whenever the app changes land on the default branch
+  # (e.g. when you merge a PR) — gives an immediate live report without using the UI.
+  # The bot's own archive commits carry "[skip ci]" so this never loops.
+  push:
+    branches: [ daily-briefing-app-17263322209186605240 ]
+    paths: [ "daily-sector-briefing/**" ]
 
 permissions:
   contents: write   # commit the archived report/data
@@ -45,8 +51,10 @@ jobs:
       - name: Generate briefing
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+        # dispatch -> chosen session; schedule -> auto (resolves to am/pm by ET hour);
+        # push/merge -> pm (recap of the last completed session).
         run: |
-          python -m src.run_briefing --session "${{ github.event.inputs.session || 'auto' }}"
+          python -m src.run_briefing --session "${{ github.event.inputs.session || (github.event_name == 'schedule' && 'auto') || 'pm' }}"
 
       - name: Commit archive
         run: |
