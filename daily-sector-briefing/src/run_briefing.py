@@ -63,6 +63,30 @@ def _catalyst_from_news(news_items: list) -> str:
     return (news_items[0] or {}).get("title", "") or ""
 
 
+def _build_movers_filter(change_tbl, news: dict, n: int) -> dict:
+    """Top-N winners/losers (day & week) for 'Overall' and per sector, for the
+    client-side sector filter on the Winners/Losers tab."""
+    def recs(df):
+        out = df.reset_index().to_dict("records")
+        for r in out:
+            r["catalyst"] = _catalyst_from_news(news.get(r["symbol"], []))
+        return out
+
+    def block(tbl):
+        day = movers.top_movers(tbl, "chg_1d", n)
+        wk = movers.top_movers(tbl, "chg_5d", n)
+        return {
+            "day": {"winners": recs(day["winners"]), "losers": recs(day["losers"])},
+            "week": {"winners": recs(wk["winners"]), "losers": recs(wk["losers"])},
+        }
+
+    result = {"Overall": block(change_tbl)}
+    if not change_tbl.empty:
+        for sector, grp in change_tbl.dropna(subset=["chg_1d"]).groupby("sector"):
+            result[str(sector)] = block(grp)
+    return result
+
+
 # --------------------------------------------------------------------------- main build
 def build_payload(provider, settings: dict, session: str,
                   as_of: dt.datetime | None = None) -> dict:
@@ -128,8 +152,10 @@ def build_payload(provider, settings: dict, session: str,
             chain, feats["last"],
             settings["options"]["unusual_vol_oi_ratio"],
             settings["options"]["near_expiries"])
+        row = meta.loc[sym] if sym in meta.index else {}
+        sec = row.get("sector", "") if hasattr(row, "get") else ""
         if flow.get("available"):
-            options_rows.append({"symbol": sym, **{k: flow.get(k) for k in
+            options_rows.append({"symbol": sym, "sector": sec, **{k: flow.get(k) for k in
                                  ("pc_ratio_vol", "atm_iv", "expected_move_pct",
                                   "bias", "unusual_count")}})
         fundamentals = fund.score_fundamentals(_safe(provider.get_fundamentals, sym))
@@ -138,11 +164,10 @@ def build_payload(provider, settings: dict, session: str,
         scored = scoring.composite(feats, fundamentals, sentiment, flow, weights)
         plan = strategies.build_plan(feats, scored, flow, None,
                                      "day" if session == "am" else "swing")
-        row = meta.loc[sym] if sym in meta.index else {}
         ideas.append({
             "symbol": sym,
             "name": row.get("name", sym) if hasattr(row, "get") else sym,
-            "sector": row.get("sector", "") if hasattr(row, "get") else "",
+            "sector": sec,
             **scored, **plan,
         })
 
@@ -164,6 +189,16 @@ def build_payload(provider, settings: dict, session: str,
 
     adv = int((change_tbl["chg_1d"] > 0).sum()) if not change_tbl.empty else 0
     decl = int((change_tbl["chg_1d"] < 0).sum()) if not change_tbl.empty else 0
+
+    # ---- Sector-filterable movers + sector/sub-sector cards --------------
+    movers_filter = _build_movers_filter(change_tbl, news, mcfg["top_n"])
+    subsec_cards = (subsec.assign(key=subsec["sector"] + " · " + subsec["industry"])
+                    [["sector", "industry", "median", "count"]].to_dict("records")
+                    if not subsec.empty else [])
+    spy_chg = _q(context_bars, bench)["chg_1d"]
+    sector_cards = [{"sector": "Overall", "chg_1d": spy_chg}] + [
+        {"sector": r["sector"], "chg_1d": r["chg_1d"]} for r in etf_perf.reset_index().to_dict("records")
+    ]
 
     payload = {
         "as_of": str(expected_day.date()),
@@ -193,6 +228,9 @@ def build_payload(provider, settings: dict, session: str,
         "losers": _movers_records(day["losers"]),
         "winners_week": week["winners"].reset_index().to_dict("records"),
         "losers_week": week["losers"].reset_index().to_dict("records"),
+        "sector_cards": sector_cards,
+        "subsector_cards": subsec_cards,
+        "movers_filter": movers_filter,
         "options": {"table": sorted(options_rows, key=lambda x: -(x.get("unusual_count") or 0))},
         "ideas": ideas, "longs": longs, "shorts": shorts,
         "futures": futures,
