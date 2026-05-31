@@ -57,6 +57,7 @@ jobs:
           python -m src.run_briefing --session "${{ github.event.inputs.session || (github.event_name == 'schedule' && 'auto') || 'pm' }}"
 
       - name: Commit archive
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -68,21 +69,24 @@ jobs:
             echo "No new briefing artifacts to commit."
           fi
 
-      - name: Upload report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sector-briefing
-          path: daily-sector-briefing/reports/latest.html
-
-  # Publish reports/ to GitHub Pages (enable Pages -> GitHub Actions in repo settings).
-  deploy-pages:
-    needs: briefing
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      # Build the Pages artifact from the FRESHLY generated reports/ in this job's
+      # workspace (not a later checkout), so what we publish is what we just produced.
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+        if: always()
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
         with:
           path: daily-sector-briefing/reports
+
+  # Deploy the artifact uploaded above. No checkout needed.
+  deploy-pages:
+    needs: briefing
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
