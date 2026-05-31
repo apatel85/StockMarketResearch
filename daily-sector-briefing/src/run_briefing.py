@@ -354,16 +354,30 @@ def main(argv=None) -> int:
         from .providers import build_provider
         provider = build_provider(settings.get("provider", "hybrid"))
 
-    payload = build_payload(provider, settings, args.session)
-    html = render_html(payload)
-    saved = storage.save_briefing(payload, html, payload["as_of"], args.session,
-                                  settings["retention_days"])
-    if args.out:
-        Path(args.out).write_text(html)
-    print(f"[briefing] {payload['as_of']} {args.session} | {payload['freshness']['summary']} | "
-          f"ideas={len(payload['ideas'])} longs={len(payload['longs'])} shorts={len(payload['shorts'])}")
-    print(f"[briefing] saved: {saved['html']} (pruned {len(saved['pruned'])} old files)")
-    return 0
+    try:
+        payload = build_payload(provider, settings, args.session)
+        html = render_html(payload)
+        saved = storage.save_briefing(payload, html, payload["as_of"], args.session,
+                                      settings["retention_days"])
+        if args.out:
+            Path(args.out).write_text(html)
+        print(f"[briefing] {payload['as_of']} {args.session} | {payload['freshness']['summary']} | "
+              f"ideas={len(payload['ideas'])} longs={len(payload['longs'])} shorts={len(payload['shorts'])}")
+        print(f"[briefing] saved: {saved['html']} (pruned {len(saved['pruned'])} old files)")
+        return 0
+    except Exception as exc:  # never leave the site blank — publish a diagnostic page
+        import traceback
+        from .report import render_error_html
+        tb = traceback.format_exc()
+        day = last_completed_trading_day().date()
+        html = render_error_html(exc, tb, args.session, getattr(provider, "name", "?"), str(day))
+        storage.save_briefing({}, html, str(day), args.session, settings["retention_days"])
+        if args.out:
+            Path(args.out).write_text(html)
+        print(f"[briefing] ERROR ({type(exc).__name__}): {exc}")
+        print(tb)
+        # Exit 0 so the diagnostic page still deploys to Pages and is committed for review.
+        return 0
 
 
 if __name__ == "__main__":
