@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Sector Briefing — diagnostic 2026-05-29 PM</title>
+<style>body{margin:0;background:#0d1117;color:#e6edf3;font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:32px 20px}
+.badge{display:inline-block;background:rgba(248,81,73,.16);color:#f85149;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+h1{font-size:20px;margin:14px 0 4px} .mut{color:#8b949e}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:16px;margin:16px 0}
+code{color:#f0883e} pre{background:#0b0f15;border:1px solid #21262d;border-radius:8px;padding:12px;overflow:auto;font-size:12px;color:#c9d1d9}</style></head>
+<body><div class="wrap">
+<span class="badge">⚠ StaleDataError</span>
+<h1>Data freshness guard tripped</h1>
+<div class="mut">Session: PM · expected trading day: 2026-05-29 · provider: hybrid</div>
+<div class="card"><b>What happened</b><p class="mut">The pipeline refused to publish because the latest market data was not for the expected trading day (e.g. a market holiday, or the data feed had not posted yet). This is intentional — it never shows stale data as if it were current.</p>
+<p>Message: <code>Refusing to publish: data not current. expected=2026-05-29 fresh=0 stale=0 missing=12 | stale={} missing=[&#x27;SPY&#x27;, &#x27;XLK&#x27;, &#x27;XLV&#x27;, &#x27;XLF&#x27;, &#x27;XLY&#x27;, &#x27;XLC&#x27;, &#x27;XLI&#x27;, &#x27;XLP&#x27;, &#x27;XLE&#x27;, &#x27;XLU&#x27;]</code></p></div>
+<div class="card"><b>Diagnostic detail</b><pre>Traceback (most recent call last):
+  File &quot;/home/user/StockMarketResearch/daily-sector-briefing/src/run_briefing.py&quot;, line 358, in main
+    payload = build_payload(provider, settings, args.session)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/user/StockMarketResearch/daily-sector-briefing/src/run_briefing.py&quot;, line 124, in build_payload
+    enforce(fr, abort_on_stale=settings[&quot;freshness&quot;][&quot;abort_on_stale&quot;])
+  File &quot;/home/user/StockMarketResearch/daily-sector-briefing/src/freshness.py&quot;, line 72, in enforce
+    raise StaleDataError(
+src.freshness.StaleDataError: Refusing to publish: data not current. expected=2026-05-29 fresh=0 stale=0 missing=12 | stale={} missing=[&#x27;SPY&#x27;, &#x27;XLK&#x27;, &#x27;XLV&#x27;, &#x27;XLF&#x27;, &#x27;XLY&#x27;, &#x27;XLC&#x27;, &#x27;XLI&#x27;, &#x27;XLP&#x27;, &#x27;XLE&#x27;, &#x27;XLU&#x27;]
+</pre></div>
+<p class="mut">This page is generated automatically so the dashboard is never blank. The next
+scheduled run (5am / 5pm ET) will retry; you can also re-run the workflow manually.</p>
+</div></body></html>
