@@ -18,7 +18,7 @@ import yaml
 from . import movers, sectors, options_flow, fundamentals as fund, sentiment as sent
 from . import scoring, strategies, futures_levels, backtest, storage
 from .calendar_utils import _now_et, last_completed_trading_day
-from .data_fetch import fetch_universe, fetch_shortlist_history
+from .data_fetch import fetch_universe, fetch_shortlist_history, fetch_fundamentals_map
 from .freshness import check_freshness, enforce
 from .indicators import compute_features
 from .report import render_html
@@ -84,7 +84,24 @@ def _build_movers_filter(change_tbl, news: dict, n: int) -> dict:
     if not change_tbl.empty:
         for sector, grp in change_tbl.dropna(subset=["chg_1d"]).groupby("sector"):
             result[str(sector)] = block(grp)
+            # Sub-sector (GICS industry) drill-down keys: "Sector|||Industry"
+            for industry, sub in grp.groupby("industry"):
+                result[f"{sector}|||{industry}"] = block(sub)
     return result
+
+
+def _subsector_hierarchy(change_tbl) -> dict:
+    """{sector: [{industry, median, count}]} for the second-level filter chips."""
+    if change_tbl.empty:
+        return {}
+    hier: dict = {}
+    grp = change_tbl.dropna(subset=["chg_1d"]).groupby(["sector", "industry"])["chg_1d"]
+    agg = grp.agg(["median", "count"]).reset_index().sort_values("median", ascending=False)
+    for r in agg.to_dict("records"):
+        hier.setdefault(str(r["sector"]), []).append(
+            {"industry": str(r["industry"]), "median": float(r["median"]), "count": int(r["count"])}
+        )
+    return hier
 
 
 # --------------------------------------------------------------------------- main build
@@ -154,8 +171,10 @@ def build_payload(provider, settings: dict, session: str,
             settings["options"]["near_expiries"])
         row = meta.loc[sym] if sym in meta.index else {}
         sec = row.get("sector", "") if hasattr(row, "get") else ""
+        ind = row.get("industry", "") if hasattr(row, "get") else ""
         if flow.get("available"):
-            options_rows.append({"symbol": sym, "sector": sec, **{k: flow.get(k) for k in
+            options_rows.append({"symbol": sym, "sector": sec, "industry": ind,
+                                 **{k: flow.get(k) for k in
                                  ("pc_ratio_vol", "atm_iv", "expected_move_pct",
                                   "bias", "unusual_count")}})
         fundamentals = fund.score_fundamentals(_safe(provider.get_fundamentals, sym))
@@ -192,13 +211,26 @@ def build_payload(provider, settings: dict, session: str,
 
     # ---- Sector-filterable movers + sector/sub-sector cards --------------
     movers_filter = _build_movers_filter(change_tbl, news, mcfg["top_n"])
-    subsec_cards = (subsec.assign(key=subsec["sector"] + " · " + subsec["industry"])
-                    [["sector", "industry", "median", "count"]].to_dict("records")
-                    if not subsec.empty else [])
+    subsec_hierarchy = _subsector_hierarchy(change_tbl)
     spy_chg = _q(context_bars, bench)["chg_1d"]
     sector_cards = [{"sector": "Overall", "chg_1d": spy_chg}] + [
         {"sector": r["sector"], "chg_1d": r["chg_1d"]} for r in etf_perf.reset_index().to_dict("records")
     ]
+    # ETF symbol per sector (for chart links on sector chips/rows).
+    sector_etf = {v: k for k, v in settings["universe"]["sector_etfs"].items()}
+    sector_etf["Overall"] = bench
+
+    # ---- Fundamentals for every displayed symbol (global filter) ---------
+    displayed = set()
+    for blk in movers_filter.values():
+        for horizon in ("day", "week"):
+            for side in ("winners", "losers"):
+                displayed.update(r["symbol"] for r in blk[horizon][side])
+    displayed.update(r["symbol"] for r in options_rows)
+    displayed.update(i["symbol"] for i in ideas)
+    fundamentals_map = fetch_fundamentals_map(
+        provider, sorted(displayed),
+        max_symbols=int(settings.get("fundamentals", {}).get("max_symbols", 400)))
 
     payload = {
         "as_of": str(expected_day.date()),
@@ -229,8 +261,10 @@ def build_payload(provider, settings: dict, session: str,
         "winners_week": week["winners"].reset_index().to_dict("records"),
         "losers_week": week["losers"].reset_index().to_dict("records"),
         "sector_cards": sector_cards,
-        "subsector_cards": subsec_cards,
+        "sector_etf": sector_etf,
+        "subsector_hierarchy": subsec_hierarchy,
         "movers_filter": movers_filter,
+        "fundamentals_map": fundamentals_map,
         "options": {"table": sorted(options_rows, key=lambda x: -(x.get("unusual_count") or 0))},
         "ideas": ideas, "longs": longs, "shorts": shorts,
         "futures": futures,

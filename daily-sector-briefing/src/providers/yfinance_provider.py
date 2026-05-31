@@ -84,6 +84,7 @@ class YFinanceProvider:
             "profitMargins", "grossMargins", "revenueGrowth", "earningsGrowth",
             "returnOnEquity", "recommendationMean", "targetMeanPrice",
             "earningsTimestamp", "marketCap", "beta", "shortPercentOfFloat",
+            "debtToEquity",
         ]
         return {k: info.get(k) for k in keys if info.get(k) is not None}
 

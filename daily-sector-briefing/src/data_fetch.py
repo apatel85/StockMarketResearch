@@ -10,11 +10,15 @@ Strategy that respects the free Polygon tier:
 from __future__ import annotations
 
 import datetime as dt
+import json
+from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
 
 from .calendar_utils import last_completed_trading_day, trading_days
+
+_CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache"
 
 
 def fetch_grouped_window(provider, symbols: List[str], window_days: int,
@@ -80,3 +84,58 @@ def fetch_shortlist_history(provider, symbols: List[str]) -> Dict[str, pd.DataFr
     if not symbols:
         return {}
     return provider.get_daily_bars(symbols, lookback_days=260)
+
+
+def _normalize_fundamentals(raw: dict) -> dict:
+    """Compact, UI-friendly fundamentals for the global filter."""
+    de = raw.get("debtToEquity")
+    de = (de / 100.0) if isinstance(de, (int, float)) else None  # yfinance reports as %
+    growth = raw.get("earningsGrowth")
+    if growth is None:
+        growth = raw.get("revenueGrowth")
+    return {
+        "mcap": raw.get("marketCap"),
+        "pe": raw.get("trailingPE"),
+        "fpe": raw.get("forwardPE"),
+        "de": de,
+        "growth": growth,
+        "is_growth": bool(growth is not None and growth > 0.15),
+    }
+
+
+def fetch_fundamentals_map(provider, symbols: List[str], max_symbols: int = 400) -> Dict[str, dict]:
+    """Fetch normalized fundamentals for the displayed symbols, cached per day.
+
+    Fundamentals change slowly, so we cache to .cache/fundamentals.json and only refetch
+    symbols not already fetched today — keeping per-run API usage low.
+    """
+    symbols = list(dict.fromkeys(symbols))[:max_symbols]
+    _CACHE_DIR.mkdir(exist_ok=True)
+    cache_path = _CACHE_DIR / "fundamentals.json"
+    try:
+        cache = json.loads(cache_path.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        cache = {}
+    today = dt.date.today().isoformat()
+
+    out: Dict[str, dict] = {}
+    dirty = False
+    for sym in symbols:
+        ent = cache.get(sym)
+        if ent and ent.get("date") == today:
+            out[sym] = ent["data"]
+            continue
+        try:
+            raw = provider.get_fundamentals(sym) or {}
+        except Exception:
+            raw = {}
+        data = _normalize_fundamentals(raw)
+        out[sym] = data
+        cache[sym] = {"date": today, "data": data}
+        dirty = True
+    if dirty:
+        try:
+            cache_path.write_text(json.dumps(cache))
+        except OSError:
+            pass
+    return out
