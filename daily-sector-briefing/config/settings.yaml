@@ -57,6 +57,9 @@ options:
   unusual_vol_oi_ratio: 2.0  # day volume / open interest above this = unusual
   near_expiries: 3           # nearest N expiries considered for flow
 
+fundamentals:
+  max_symbols: 400           # cap fundamentals fetches per run (cached daily)
+
 freshness:
   max_stale_days: 0          # PM: last bar must equal expected last trading day
   abort_on_stale: true

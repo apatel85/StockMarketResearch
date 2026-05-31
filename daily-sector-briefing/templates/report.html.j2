@@ -6,93 +6,171 @@
 <title>Sector Briefing — {{ as_of }} {{ session|upper }}</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root{--bg:#0d1117;--card:#161b22;--line:#21262d;--fg:#e6edf3;--mut:#8b949e;
-        --up:#3fb950;--dn:#f85149;--accent:#58a6ff;--warn:#d29922;}
+  :root{--bg:#0b0f15;--bg2:#0d1117;--card:#161b22;--card2:#1b2230;--line:#262d38;
+        --fg:#e6edf3;--mut:#8b949e;--up:#3fb950;--dn:#f85149;--accent:#58a6ff;
+        --accent2:#7c5cff;--warn:#d29922;}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);
-       font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  header{padding:16px 20px;border-bottom:1px solid var(--line);
-         display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-  h1{font-size:18px;margin:0}
-  .meta{color:var(--mut);font-size:12px}
-  .badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+       font:14px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  header{padding:14px 20px;background:linear-gradient(120deg,#11161f,#0d1117);
+         border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;
+         align-items:center;justify-content:space-between}
+  h1{font-size:18px;margin:0;letter-spacing:.2px}
+  .meta{color:var(--mut);font-size:12px;margin-top:2px}
+  .badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
   .ok{background:rgba(63,185,80,.15);color:var(--up)}
   .stale{background:rgba(248,81,73,.15);color:var(--dn)}
-  nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 16px;border-bottom:1px solid var(--line);
-      position:sticky;top:0;background:var(--bg);z-index:5}
+
+  nav{display:flex;flex-wrap:wrap;gap:5px;padding:9px 16px;border-bottom:1px solid var(--line);
+      position:sticky;top:0;background:rgba(13,17,23,.95);backdrop-filter:blur(6px);z-index:8}
   nav button{background:transparent;border:1px solid var(--line);color:var(--mut);
-             padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
-  nav button.active{color:var(--fg);border-color:var(--accent);background:rgba(88,166,255,.1)}
-  main{padding:18px 20px;max-width:1200px;margin:0 auto}
-  .tab{display:none} .tab.active{display:block}
+             padding:7px 13px;border-radius:20px;cursor:pointer;font-size:13px;transition:.15s}
+  nav button:hover{color:var(--fg)}
+  nav button.active{color:#fff;border-color:transparent;
+                    background:linear-gradient(120deg,var(--accent),var(--accent2))}
+
+  /* global fundamentals filter bar */
+  #gfbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:9px 18px;
+         border-bottom:1px solid var(--line);background:var(--bg2);position:sticky;top:49px;z-index:7}
+  #gfbar .gflabel{font-weight:700;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+  #gfbar label{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:5px}
+  #gfbar select{background:var(--card2);color:var(--fg);border:1px solid var(--line);
+                border-radius:7px;padding:4px 6px;font-size:12px}
+  #gfbar .chk{cursor:pointer}
+  #gfReset{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:7px;
+           padding:4px 10px;font-size:12px;cursor:pointer}
+  #gfReset:hover{border-color:var(--dn);color:var(--dn)}
+  #gfCount{font-size:12px;color:var(--mut);margin-left:auto}
+  #gfCount b{color:var(--accent)}
+
+  main{padding:18px 20px;max-width:1320px;margin:0 auto}
+  .tab{display:none} .tab.active{display:block;animation:fade .2s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
   .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
-  .card .k{color:var(--mut);font-size:12px} .card .v{font-size:20px;font-weight:600;margin-top:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;transition:.15s}
+  .card:hover{border-color:#34405220}
+  .card .k{color:var(--mut);font-size:12px} .card .v{font-size:21px;font-weight:700;margin-top:2px}
   table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
-  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
-  th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
-  tr:hover td{background:rgba(255,255,255,.02)}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  tbody tr{transition:.1s} tr:hover td{background:rgba(255,255,255,.025)}
   .up{color:var(--up)} .dn{color:var(--dn)} .mut{color:var(--mut)}
-  .pill{display:inline-block;padding:1px 7px;border-radius:8px;font-size:11px;font-weight:600}
-  .pill.long{background:rgba(63,185,80,.15);color:var(--up)}
-  .pill.short{background:rgba(248,81,73,.15);color:var(--dn)}
-  .pill.lead{background:rgba(63,185,80,.12);color:var(--up)}
-  .pill.lag{background:rgba(248,81,73,.12);color:var(--dn)}
-  .pill.improve{background:rgba(88,166,255,.12);color:var(--accent)}
-  .pill.weaken{background:rgba(210,153,34,.12);color:var(--warn)}
-  .conf{height:7px;border-radius:4px;background:var(--line);overflow:hidden;min-width:70px}
+  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:700}
+  .pill.long,.pill.bullish{background:rgba(63,185,80,.16);color:var(--up)}
+  .pill.short,.pill.bearish{background:rgba(248,81,73,.16);color:var(--dn)}
+  .pill.neutral{background:rgba(139,148,158,.16);color:var(--mut)}
+  .pill.lead{background:rgba(63,185,80,.14);color:var(--up)}
+  .pill.lag{background:rgba(248,81,73,.14);color:var(--dn)}
+  .pill.improve{background:rgba(88,166,255,.14);color:var(--accent)}
+  .pill.weaken{background:rgba(210,153,34,.14);color:var(--warn)}
+  .conf{height:7px;border-radius:5px;background:var(--line);overflow:hidden;min-width:54px;flex:1}
   .conf>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--up))}
-  h2{font-size:15px;border-left:3px solid var(--accent);padding-left:8px;margin:22px 0 6px}
-  h3{font-size:13px;color:var(--mut);margin:16px 0 4px}
-  .idea{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0}
-  .idea .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .idea .sym{font-size:16px;font-weight:700}
-  .lv{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0;color:var(--mut)}
-  .lv b{color:var(--fg)}
+  h2{font-size:15px;border-left:3px solid var(--accent);padding-left:9px;margin:20px 0 6px}
+  h3{font-size:13px;color:var(--mut);margin:14px 0 4px}
   .note{color:var(--mut);font-size:12px}
-  ul.notes{margin:6px 0 0;padding-left:18px} ul.notes li{color:var(--mut)}
-  .strat{border-top:1px dashed var(--line);margin-top:8px;padding-top:8px}
-  .disclaimer{color:var(--mut);font-size:11px;border-top:1px solid var(--line);
-              margin-top:30px;padding-top:12px}
-  canvas{max-height:300px}
+  ul.notes{margin:6px 0 0;padding-left:16px} ul.notes li{color:var(--mut);font-size:12px}
+
+  /* clickable symbol -> chart */
+  .tvsym{cursor:pointer;border-bottom:1px solid transparent;font-weight:700}
+  .tvsym:hover{color:var(--accent);border-bottom-color:var(--accent)}
+  .tvsym::after{content:"›";opacity:0;margin-left:3px;color:var(--accent)}
+  .tvsym:hover::after{opacity:1}
+
+  /* sector / sub-sector filter chips */
+  .filterbar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
+  .subbar{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px;padding-left:14px;
+          border-left:2px solid var(--line)}
+  .chip{cursor:pointer;border:1px solid var(--line);border-radius:9px;padding:5px 10px;
+        background:var(--card);font-size:12px;display:flex;gap:7px;align-items:center;white-space:nowrap;transition:.12s}
+  .chip:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .chip.active{border-color:transparent;background:linear-gradient(120deg,rgba(88,166,255,.22),rgba(124,92,255,.22));
+               box-shadow:inset 0 0 0 1px var(--accent)}
+  .chip b{font-weight:700} .chip .c{font-size:11px}
+  .chip .gochart{opacity:.5;font-size:11px} .chip .gochart:hover{opacity:1}
+  .subbar .chip{font-size:11px;padding:4px 8px;background:transparent}
+  .crumb{font-size:12px;color:var(--mut);margin:6px 0}
+  .crumb b{color:var(--fg)}
+
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.duo{grid-template-columns:1fr}}
+  table.compact th,table.compact td{padding:5px 7px;font-size:12px}
+
+  .setupgrid{display:grid;gap:13px;grid-template-columns:repeat(auto-fill,minmax(295px,1fr))}
+  .idea{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);
+        border-radius:12px;padding:13px;cursor:pointer;transition:.15s}
+  .idea:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .idea .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .idea .sym{font-size:16px;font-weight:800}
+  .lv{display:flex;gap:12px;flex-wrap:wrap;margin:7px 0;color:var(--mut);font-size:12px}
+  .lv b{color:var(--fg)}
+  .strat{border-top:1px dashed var(--line);margin-top:8px;padding-top:7px;font-size:12px}
+  .strat ol{margin:4px 0 0;padding-left:16px} .strat li{margin:2px 0;color:var(--mut)}
+  .fundtags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .ftag{font-size:10px;color:var(--mut);background:rgba(255,255,255,.04);border-radius:6px;padding:1px 6px}
+  .chartlink{font-size:11px;color:var(--accent);margin-top:7px}
+
+  .term{border-bottom:1px dotted var(--accent);cursor:help}
+  #tip{position:fixed;max-width:320px;background:#1c2430;border:1px solid var(--accent);
+       color:var(--fg);padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.5;
+       box-shadow:0 10px 30px rgba(0,0,0,.55);z-index:50;display:none}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin:6px 0}
+  .hidden{display:none!important}
+  .disclaimer{color:var(--mut);font-size:11px;border-top:1px solid var(--line);margin-top:30px;padding-top:12px}
+  canvas{max-height:280px}
 </style>
 </head>
 <body>
 <header>
   <div>
     <h1>📊 Daily Sector Briefing</h1>
-    <div class="meta">{{ as_of }} · {{ session_label }} · provider: {{ provider }} ·
-      generated {{ generated_at }}</div>
+    <div class="meta">{{ as_of }} · {{ session_label }} · provider: {{ provider }} · generated {{ generated_at }}</div>
   </div>
-  <div>
-    {% if freshness.ok %}<span class="badge ok">DATA FRESH · {{ freshness.expected_day }}</span>
-    {% else %}<span class="badge stale">DATA FLAGGED</span>{% endif %}
-  </div>
+  <div>{% if freshness.ok %}<span class="badge ok">DATA FRESH · {{ freshness.expected_day }}</span>
+    {% else %}<span class="badge stale">DATA FLAGGED</span>{% endif %}</div>
 </header>
 
 <nav id="nav"></nav>
+
+<div id="gfbar">
+  <span class="gflabel">⚙ Filters</span>
+  <label>Mkt Cap ≥ <select id="gfMcap"><option value="">Any</option>
+    <option value="2000000000">$2B</option><option value="10000000000">$10B</option>
+    <option value="50000000000">$50B</option><option value="200000000000">$200B</option></select></label>
+  <label><span class="term" data-g="pe">P/E</span> ≤ <select id="gfPe"><option value="">Any</option>
+    <option value="15">15</option><option value="25">25</option><option value="40">40</option><option value="60">60</option></select></label>
+  <label>Fwd P/E ≤ <select id="gfFpe"><option value="">Any</option>
+    <option value="15">15</option><option value="25">25</option><option value="40">40</option></select></label>
+  <label><span class="term" data-g="de">D/E</span> ≤ <select id="gfDe"><option value="">Any</option>
+    <option value="0.5">0.5</option><option value="1">1.0</option><option value="2">2.0</option></select></label>
+  <label><span class="term" data-g="growth">Growth</span> ≥ <select id="gfGrowth"><option value="">Any</option>
+    <option value="0">0%</option><option value="0.1">10%</option><option value="0.2">20%</option></select></label>
+  <label class="chk"><input type="checkbox" id="gfGrowthOnly"/> Growth only</label>
+  <button id="gfReset">Reset</button>
+  <span id="gfCount"></span>
+</div>
+
+<div id="tip"></div>
 <main>
   <!-- 1. OVERVIEW -->
   <section class="tab" data-tab="Overview">
     <h2>Market Pulse</h2>
     <div class="grid">
       {% for q in market_pulse.indices + market_pulse.futures %}
-      <div class="card"><div class="k">{{ q.symbol }}</div>
+      <div class="card"><div class="k tvsym" data-chart="{{ q.symbol }}">{{ q.symbol }}</div>
         <div class="v {{ 'up' if q.chg_1d>=0 else 'dn' }}">{{ q.chg_1d|pct }}</div>
         <div class="note">{{ q.last|num }}</div></div>
       {% endfor %}
-      <div class="card"><div class="k">VIX ({{ market_pulse.vix.regime }})</div>
+      <div class="card"><div class="k tvsym" data-chart="^VIX"><span class="term" data-g="vix">VIX</span> ({{ market_pulse.vix.regime }})</div>
         <div class="v">{{ market_pulse.vix.last|num }}</div></div>
       {% for q in market_pulse.rates + market_pulse.intermarket %}
-      <div class="card"><div class="k">{{ q.symbol }}</div>
+      <div class="card"><div class="k tvsym" data-chart="{{ q.symbol }}">{{ q.symbol }}</div>
         <div class="v {{ 'up' if q.chg_1d>=0 else 'dn' }}">{{ q.chg_1d|pct }}</div></div>
       {% endfor %}
     </div>
     {% if market_pulse.breadth %}
-    <h2>Breadth</h2>
+    <h2><span class="term" data-g="breadth">Breadth</span></h2>
     <div class="grid">
-      <div class="card"><div class="k">% above 50DMA</div><div class="v">{{ market_pulse.breadth.pct_above_50|num }}</div></div>
-      <div class="card"><div class="k">% above 200DMA</div><div class="v">{{ market_pulse.breadth.pct_above_200|num }}</div></div>
       <div class="card"><div class="k">Advancers</div><div class="v up">{{ market_pulse.breadth.adv }}</div></div>
       <div class="card"><div class="k">Decliners</div><div class="v dn">{{ market_pulse.breadth.decl }}</div></div>
     </div>{% endif %}
@@ -103,14 +181,13 @@
   <section class="tab" data-tab="Sectors">
     <h2>Sector Performance (1-Day)</h2>
     <canvas id="sectorChart"></canvas>
-    {% if sectors.hot_day %}
-    <p>🔥 Hot today: <b class="up">{{ sectors.hot_day.hot.sector }}</b> ({{ sectors.hot_day.hot.chg|pct }})
+    {% if sectors.hot_day %}<p>🔥 Hot today: <b class="up">{{ sectors.hot_day.hot.sector }}</b> ({{ sectors.hot_day.hot.chg|pct }})
        · 🧊 Cold: <b class="dn">{{ sectors.hot_day.cold.sector }}</b> ({{ sectors.hot_day.cold.chg|pct }})</p>{% endif %}
-    {% if sectors.hot_week %}
-    <p>📅 Hot this week: <b class="up">{{ sectors.hot_week.hot.sector }}</b> ({{ sectors.hot_week.hot.chg|pct }})
-       · Cold: <b class="dn">{{ sectors.hot_week.cold.sector }}</b> ({{ sectors.hot_week.cold.chg|pct }})</p>{% endif %}
+    {% if sectors.hot_week %}<p>📅 This week: <b class="up">{{ sectors.hot_week.hot.sector }}</b> ({{ sectors.hot_week.hot.chg|pct }})
+       · <b class="dn">{{ sectors.hot_week.cold.sector }}</b> ({{ sectors.hot_week.cold.chg|pct }})</p>{% endif %}
     <table><thead><tr><th>Sector</th><th>ETF</th><th>1D</th><th>1W</th><th>1M</th></tr></thead><tbody>
-      {% for r in sectors.etf_perf %}<tr><td>{{ r.sector }}</td><td class="mut">{{ r.etf }}</td>
+      {% for r in sectors.etf_perf %}<tr><td>{{ r.sector }}</td>
+      <td class="tvsym" data-chart="{{ r.etf }}">{{ r.etf }}</td>
       <td class="{{ 'up' if r.chg_1d>=0 else 'dn' }}">{{ r.chg_1d|pct }}</td>
       <td class="{{ 'up' if r.chg_5d>=0 else 'dn' }}">{{ r.chg_5d|pct }}</td>
       <td>{{ r.chg_20d|pct }}</td></tr>{% endfor %}
@@ -124,9 +201,14 @@
     </tbody></table>
 
     {% if sectors.rrg %}
-    <h2>Rotation (RRG quadrants vs SPY)</h2>
-    <table><thead><tr><th>Sector</th><th>Rel. Strength</th><th>Momentum</th><th>Quadrant</th></tr></thead><tbody>
-      {% for r in sectors.rrg %}<tr><td>{{ r.sector }}</td>
+    <h2><span class="term" data-g="rrg">Rotation (RRG)</span> vs SPY</h2>
+    <div class="legend"><span><span class="pill lead">Leading</span> strong &amp; rising</span>
+      <span><span class="pill weaken">Weakening</span> fading</span>
+      <span><span class="pill lag">Lagging</span> weak</span>
+      <span><span class="pill improve">Improving</span> turning up</span></div>
+    <table><thead><tr><th>Sector</th><th>ETF</th><th><span class="term" data-g="relative_strength">Rel. Strength</span></th>
+      <th>Momentum</th><th><span class="term" data-g="quadrant">Quadrant</span></th></tr></thead><tbody>
+      {% for r in sectors.rrg %}<tr><td>{{ r.sector }}</td><td class="tvsym" data-chart="{{ r.etf }}">{{ r.etf }}</td>
       <td class="{{ 'up' if r.rs>=0 else 'dn' }}">{{ r.rs|pct }}</td>
       <td class="{{ 'up' if r.momentum>=0 else 'dn' }}">{{ r.momentum|pct }}</td>
       <td><span class="pill {{ {'Leading':'lead','Lagging':'lag','Improving':'improve','Weakening':'weaken'}[r.quadrant] }}">{{ r.quadrant }}</span></td></tr>{% endfor %}
@@ -135,65 +217,70 @@
 
   <!-- 3. WINNERS & LOSERS -->
   <section class="tab" data-tab="Winners & Losers">
-    {% macro mtable(rows) %}
-    <table><thead><tr><th>#</th><th>Symbol</th><th>Sector</th><th>1D</th><th>Close</th><th>Catalyst</th></tr></thead><tbody>
-      {% for r in rows %}<tr><td class="mut">{{ loop.index }}</td><td><b>{{ r.symbol }}</b><div class="note">{{ r.name }}</div></td>
-      <td class="mut">{{ r.sector }}</td><td class="{{ 'up' if r.chg_1d>=0 else 'dn' }}">{{ r.chg_1d|pct }}</td>
-      <td>{{ r.close|num }}</td><td class="note">{{ r.catalyst }}</td></tr>{% endfor %}
-    </tbody></table>{% endmacro %}
-    <h2>Top 10 Winners — Day</h2>{{ mtable(winners) }}
-    <h2>Top 10 Losers — Day</h2>{{ mtable(losers) }}
-    <h2>Top 10 Winners — Week</h2>{{ mtable(winners_week) }}
-    <h2>Top 10 Losers — Week</h2>{{ mtable(losers_week) }}
+    <h2>Top 10 Winners &amp; Losers</h2>
+    <p class="note">Pick a sector, then drill into a sub-sector. Click any symbol to open its chart.</p>
+    <div class="filterbar" id="moversBar"></div>
+    <div class="subbar hidden" id="moversSubBar"></div>
+    <div class="crumb" id="moversCrumb"></div>
+    <h3>Today</h3>
+    <div class="duo">
+      <div><h3 class="up">▲ Winners</h3><div id="mvDayWin"></div></div>
+      <div><h3 class="dn">▼ Losers</h3><div id="mvDayLose"></div></div>
+    </div>
+    <h3>This Week</h3>
+    <div class="duo">
+      <div><h3 class="up">▲ Winners</h3><div id="mvWeekWin"></div></div>
+      <div><h3 class="dn">▼ Losers</h3><div id="mvWeekLose"></div></div>
+    </div>
   </section>
 
   <!-- 4. OPTIONS FLOW -->
   <section class="tab" data-tab="Options Flow">
     <h2>Options Positioning</h2>
-    <p class="note">P/C = put/call volume ratio (low = call-heavy/bullish). Vol/OI flags unusual activity.
-       Snapshot data — see disclaimer on live flow.</p>
-    <table><thead><tr><th>Symbol</th><th>Bias</th><th>P/C Vol</th><th>ATM IV</th><th>Exp. Move</th><th>Unusual</th></tr></thead><tbody>
-      {% for r in options.table %}<tr><td><b>{{ r.symbol }}</b></td>
-      <td><span class="pill {{ 'long' if r.bias=='bullish' else 'short' if r.bias=='bearish' else '' }}">{{ r.bias }}</span></td>
-      <td>{{ r.pc_ratio_vol|num }}</td><td>{{ (r.atm_iv*100)|num if r.atm_iv else '—' }}{{ '%' if r.atm_iv }}</td>
-      <td>{{ r.expected_move_pct|num }}%</td><td class="mut">{{ r.unusual_count }}</td></tr>{% endfor %}
-    </tbody></table>
+    <p class="note">Pick a sector → sub-sector. <span class="term" data-g="put_call">P/C</span> low = call-heavy/bullish ·
+      <span class="term" data-g="vol_oi">Vol/OI</span> flags unusual activity. Snapshot data — see disclaimer.</p>
+    <div class="filterbar" id="optBar"></div>
+    <div class="subbar hidden" id="optSubBar"></div>
+    <div class="crumb" id="optCrumb"></div>
+    <div id="optTable"></div>
   </section>
 
-  <!-- 5. IDEAS (longs & shorts) -->
+  <!-- 5. IDEAS -->
   <section class="tab" data-tab="Long & Short Ideas">
     {% macro ideatable(rows) %}
-    <table><thead><tr><th>Symbol</th><th>Bias</th><th>Confidence</th><th>Drivers</th></tr></thead><tbody>
-      {% for r in rows %}<tr><td><b>{{ r.symbol }}</b> <span class="note">{{ r.sector }}</span></td>
+    <table class="compact"><thead><tr><th>Symbol</th><th><span class="term" data-g="bias">Bias</span></th>
+      <th><span class="term" data-g="confidence">Confidence</span></th><th>Drivers</th></tr></thead><tbody>
+      {% for r in rows %}<tr data-sym="{{ r.symbol }}"><td><span class="tvsym" data-chart="{{ r.symbol }}">{{ r.symbol }}</span> <span class="note">{{ r.sector }}</span></td>
       <td><span class="pill {{ r.bias }}">{{ r.bias }}</span></td>
       <td><div style="display:flex;align-items:center;gap:8px"><div class="conf"><i style="width:{{ r.confidence }}%"></i></div>{{ r.confidence }}%</div></td>
       <td class="note">{{ r.notes[:3]|join('; ') }}</td></tr>{% endfor %}
     </tbody></table>{% endmacro %}
-    <h2>Long Candidates</h2>{{ ideatable(longs) }}
-    <h2>Short Candidates</h2>{{ ideatable(shorts) }}
+    <h2>Long Candidates</h2>{{ ideatable(longs) if longs else '<p class="note">None above threshold today.</p>'|safe }}
+    <h2>Short Candidates</h2>{{ ideatable(shorts) if shorts else '<p class="note">None above threshold today.</p>'|safe }}
   </section>
 
   <!-- 6. TRADE SETUPS -->
   <section class="tab" data-tab="Trade Setups">
-    <h2>Ranked Setups (entry / stop / target + options)</h2>
+    <h2>Ranked Setups</h2>
+    <p class="note">Click any card to open its chart. <span class="term" data-g="entry">Entry</span> /
+      <span class="term" data-g="stop">Stop</span> / <span class="term" data-g="target">Target</span> ·
+      <span class="term" data-g="rr">R:R</span></p>
+    <div class="setupgrid">
     {% for r in ideas %}
-    <div class="idea">
-      <div class="hd">
-        <div><span class="sym">{{ r.symbol }}</span> <span class="note">{{ r.name }} · {{ r.sector }}</span></div>
-        <div><span class="pill {{ r.bias }}">{{ r.bias|upper }}</span>
-          <span class="mut">conf {{ r.confidence }}%</span>
-          {% if r.earnings_soon %}<span class="pill weaken">earnings soon</span>{% endif %}</div>
+      <div class="idea" data-sym="{{ r.symbol }}" data-chart="{{ r.symbol }}">
+        <div class="hd"><div><span class="sym">{{ r.symbol }}</span> <span class="pill {{ r.bias }}">{{ r.bias|upper }}</span></div>
+          <div class="note">conf {{ r.confidence }}%{% if r.earnings_soon %} · <span class="pill weaken">ER soon</span>{% endif %}</div></div>
+        <div class="note">{{ r.name }} · {{ r.sector }}</div>
+        {% if r.levels %}<div class="lv"><span>E <b>{{ r.levels.entry|num }}</b></span>
+          <span>S <b class="dn">{{ r.levels.stop|num }}</b></span>
+          <span>T <b class="up">{{ r.levels.target|num }}</b></span><span>R:R <b>{{ r.levels.rr }}</b></span></div>{% endif %}
+        <div class="fundtags" data-fundtags="{{ r.symbol }}"></div>
+        <div class="strat"><b>Options:</b>
+          <ol>{% for s in r.option_strategies %}<li><b>{{ s.name }}</b> — {{ s.rationale }} <span class="note">[{{ s.tenor }}]</span></li>{% endfor %}</ol></div>
+        <div class="chartlink">📈 click to open chart →</div>
       </div>
-      {% if r.levels %}
-      <div class="lv"><span>Entry <b>{{ r.levels.entry|num }}</b></span>
-        <span>Stop <b class="dn">{{ r.levels.stop|num }}</b></span>
-        <span>Target <b class="up">{{ r.levels.target|num }}</b></span>
-        <span>R:R <b>{{ r.levels.rr }}</b></span></div>{% endif %}
-      <ul class="notes">{% for n in r.notes %}<li>{{ n }}</li>{% endfor %}</ul>
-      <div class="strat"><b>Top 3 option strategies:</b>
-        <ol>{% for s in r.option_strategies %}<li><b>{{ s.name }}</b> <span class="note">[{{ s.tenor }}]</span> — {{ s.rationale }}</li>{% endfor %}</ol>
-      </div>
-    </div>{% endfor %}
+    {% endfor %}
+    </div>
   </section>
 
   <!-- 7. FUTURES & LEVELS -->
@@ -201,19 +288,18 @@
     <h2>ES / NQ Key Levels</h2>
     <div class="grid">
       {% for k in ['ES','NQ'] %}{% set f = futures[k] %}{% if f.available %}
-      <div class="card"><div class="k">{{ f.symbol }}</div>
+      <div class="card"><div class="k tvsym" data-chart="{{ 'ES=F' if k=='ES' else 'NQ=F' }}">{{ f.symbol }}</div>
         <div class="v">{{ f.last|num }}</div>
         <div class="note">PDH {{ f.prior_high|num }} · PDL {{ f.prior_low|num }}</div>
-        <div class="note">ATR {{ f.atr|num }} · range {{ f.expected_range[0]|num }}–{{ f.expected_range[1]|num }}</div>
-      </div>{% endif %}{% endfor %}
+        <div class="note"><span class="term" data-g="atr">ATR</span> {{ f.atr|num }} · range {{ f.expected_range[0]|num }}–{{ f.expected_range[1]|num }}</div></div>
+      {% endif %}{% endfor %}
       {% if futures.VIX_implied.available %}
-      <div class="card"><div class="k">VIX-implied daily move</div>
+      <div class="card"><div class="k"><span class="term" data-g="expected_move">VIX-implied move</span></div>
         <div class="v">±{{ futures.VIX_implied.implied_daily_move_pct|num }}%</div>
         <div class="note">SPX band {{ futures.VIX_implied.implied_band[0]|num }}–{{ futures.VIX_implied.implied_band[1]|num }}</div></div>{% endif %}
       {% if futures.gamma_flip.available %}
-      <div class="card"><div class="k">SPX gamma-flip proxy</div>
-        <div class="v">{{ futures.gamma_flip.proxy_level|num }}</div>
-        <div class="note">{{ futures.gamma_flip.note }}</div></div>{% endif %}
+      <div class="card"><div class="k"><span class="term" data-g="gamma_flip">SPX gamma-flip proxy</span></div>
+        <div class="v">{{ futures.gamma_flip.proxy_level|num }}</div><div class="note">{{ futures.gamma_flip.note }}</div></div>{% endif %}
     </div>
   </section>
 
@@ -222,7 +308,7 @@
     <h2>To Monitor</h2>
     <h3>Sectors</h3><p>{{ watchlist.sectors|join(', ') }}</p>
     <h3>Sub-sectors</h3><p>{{ watchlist.subsectors|join(', ') }}</p>
-    <h3>Stocks</h3><p>{{ watchlist.stocks|join(', ') }}</p>
+    <h3>Stocks</h3><div class="filterbar">{% for s in watchlist.stocks %}<span class="chip tvsym" data-chart="{{ s }}"><b>{{ s }}</b></span>{% endfor %}</div>
   </section>
 
   <!-- 9. ACCURACY -->
@@ -234,12 +320,11 @@
       <div class="card"><div class="k">Long hit-rate</div><div class="v up">{{ (accuracy.hit_rate_long*100)|num if accuracy.hit_rate_long is not none else '—' }}%</div></div>
       <div class="card"><div class="k">Short hit-rate</div><div class="v dn">{{ (accuracy.hit_rate_short*100)|num if accuracy.hit_rate_short is not none else '—' }}%</div></div>
     </div>
-    <h3>By confidence bucket</h3>
+    <h3>By <span class="term" data-g="confidence">confidence</span> bucket</h3>
     <table><thead><tr><th>Bucket</th><th>Hit-rate</th><th>n</th></tr></thead><tbody>
       {% for b,v in accuracy.by_confidence.items() %}<tr><td>{{ b }}</td><td>{{ (v.hit_rate*100)|num }}%</td><td class="mut">{{ v.n }}</td></tr>{% endfor %}
     </tbody></table>
     {% else %}<p class="note">Not enough archived sessions yet — accuracy populates as the 30-day history builds.</p>{% endif %}
-
     {% if outofbox %}<h2>Out-of-the-box signals</h2><ul class="notes">{% for o in outofbox %}<li>{{ o }}</li>{% endfor %}</ul>{% endif %}
   </section>
 
@@ -247,27 +332,147 @@
 </main>
 
 <script>
-  const sectorData = {{ sector_chart_json|safe }};
-  const tabs = [...document.querySelectorAll('.tab')];
-  const nav = document.getElementById('nav');
-  tabs.forEach((t,i)=>{
-    const b=document.createElement('button');
-    b.textContent=t.dataset.tab; if(i===0)b.classList.add('active');
-    b.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));
-      [...nav.children].forEach(x=>x.classList.remove('active'));
-      t.classList.add('active'); b.classList.add('active'); window.scrollTo(0,0);};
-    nav.appendChild(b);
-  });
-  if(tabs[0]) tabs[0].classList.add('active');
-  if(sectorData && sectorData.labels && window.Chart){
-    new Chart(document.getElementById('sectorChart'),{
-      type:'bar',
-      data:{labels:sectorData.labels,datasets:[{data:sectorData.values,
-        backgroundColor:sectorData.values.map(v=>v>=0?'#3fb950':'#f85149')}]},
-      options:{plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e'}}}}
-    });
-  }
+  const SECTOR_CHART={{ sector_chart_json|safe }}, MOVERS={{ movers_filter_json|safe }},
+        SECTOR_CARDS={{ sector_cards_json|safe }}, SECTOR_ETF={{ sector_etf_json|safe }},
+        SUBSEC_HIER={{ subsector_hierarchy_json|safe }}, OPTIONS={{ options_rows_json|safe }},
+        FUND={{ fundamentals_json|safe }}, GLOSSARY={{ glossary_json|safe }};
+
+  /* ---------- helpers ---------- */
+  const fmtPct=v=>(v==null||isNaN(v))?'—':(v>=0?'+':'')+(+v).toFixed(2)+'%';
+  const fmtNum=v=>(v==null||isNaN(v))?'—':(+v).toLocaleString(undefined,{maximumFractionDigits:2});
+  const cls=v=>v>=0?'up':'dn';
+  const esc=s=>(s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const shortSec=s=>({'Information Technology':'Tech','Health Care':'Health','Consumer Discretionary':'Cons Disc',
+    'Communication Services':'Comms','Consumer Staples':'Staples','Real Estate':'Real Est','Overall':'🌐 Overall'}[s]||s);
+  const mcapTxt=v=>v==null?'':(v>=1e12?'$'+(v/1e12).toFixed(1)+'T':v>=1e9?'$'+(v/1e9).toFixed(0)+'B':'$'+(v/1e6).toFixed(0)+'M');
+
+  /* ---------- TradingView chart links ---------- */
+  const TV={'^GSPC':'SPX','^NDX':'NDX','^DJI':'DJI','^RUT':'RUT','^VIX':'VIX','ES=F':'ES1!','NQ=F':'NQ1!',
+    '^TNX':'TVC:US10Y','^TYX':'TVC:US30Y','DX-Y.NYB':'TVC:DXY','CL=F':'NYMEX:CL1!','GC=F':'COMEX:GC1!'};
+  const tvSym=s=>TV[s]||String(s).replace('^','').replace('=F','');
+  function openChart(s){ if(confirm('Open chart for '+s+' on TradingView?'))
+    window.open('https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tvSym(s)),'_blank'); }
+  document.addEventListener('click',e=>{ const t=e.target.closest('[data-chart]');
+    if(t){ e.stopPropagation(); openChart(t.dataset.chart); } });
+
+  /* ---------- tabs ---------- */
+  const tabs=[...document.querySelectorAll('.tab')], nav=document.getElementById('nav');
+  tabs.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t.dataset.tab;
+    if(i===0)b.classList.add('active');
+    b.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));[...nav.children].forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');b.classList.add('active');window.scrollTo(0,0);};
+    nav.appendChild(b);});
+  if(tabs[0])tabs[0].classList.add('active');
+
+  /* ---------- glossary tooltip ---------- */
+  const tip=document.getElementById('tip'); let pinned=false;
+  function showTip(el){const txt=GLOSSARY[el.dataset.g]; if(!txt)return;
+    tip.textContent=txt;tip.style.display='block';
+    const r=el.getBoundingClientRect();let top=r.bottom+8,left=Math.min(r.left,innerWidth-tip.offsetWidth-12);
+    if(top+tip.offsetHeight>innerHeight)top=r.top-tip.offsetHeight-8;
+    tip.style.top=top+'px';tip.style.left=Math.max(8,left)+'px';}
+  function hideTip(){if(!pinned)tip.style.display='none';}
+  function bindTerms(root){(root||document).querySelectorAll('.term').forEach(el=>{if(el._b)return;el._b=1;el.tabIndex=0;
+    el.addEventListener('mouseenter',()=>{if(!pinned)showTip(el);});el.addEventListener('mouseleave',hideTip);
+    el.addEventListener('focus',()=>showTip(el));el.addEventListener('blur',hideTip);
+    el.addEventListener('click',e=>{e.stopPropagation();if(pinned&&tip.style.display==='block'){pinned=false;tip.style.display='none';}else{pinned=true;showTip(el);}});});}
+  document.addEventListener('click',()=>{pinned=false;tip.style.display='none';});
+
+  /* ---------- global fundamentals filter ---------- */
+  const GF={mcap:null,pe:null,fpe:null,de:null,growth:null,growthOnly:false};
+  function readGF(){const g=id=>{const v=document.getElementById(id).value;return v===''?null:+v;};
+    GF.mcap=g('gfMcap');GF.pe=g('gfPe');GF.fpe=g('gfFpe');GF.de=g('gfDe');GF.growth=g('gfGrowth');
+    GF.growthOnly=document.getElementById('gfGrowthOnly').checked;}
+  function passesFund(sym){const f=FUND[sym];
+    if(GF.mcap!=null&&!(f&&f.mcap>=GF.mcap))return false;
+    if(GF.pe!=null&&!(f&&f.pe>0&&f.pe<=GF.pe))return false;
+    if(GF.fpe!=null&&!(f&&f.fpe>0&&f.fpe<=GF.fpe))return false;
+    if(GF.de!=null&&!(f&&f.de!=null&&f.de<=GF.de))return false;
+    if(GF.growth!=null&&!(f&&f.growth!=null&&f.growth>=GF.growth))return false;
+    if(GF.growthOnly&&!(f&&f.is_growth))return false;
+    return true;}
+  function gfActive(){return GF.mcap!=null||GF.pe!=null||GF.fpe!=null||GF.de!=null||GF.growth!=null||GF.growthOnly;}
+  function applyGlobalFilter(){readGF();renderMovers();renderOptions();
+    document.querySelectorAll('[data-sym]').forEach(el=>{el.classList.toggle('hidden',!passesFund(el.dataset.sym));});
+    const keys=Object.keys(FUND),pass=keys.filter(passesFund).length;
+    document.getElementById('gfCount').innerHTML=gfActive()?`<b>${pass}</b> / ${keys.length} stocks match`:`${keys.length} stocks`;}
+  ['gfMcap','gfPe','gfFpe','gfDe','gfGrowth','gfGrowthOnly'].forEach(id=>document.getElementById(id).addEventListener('change',applyGlobalFilter));
+  document.getElementById('gfReset').onclick=()=>{['gfMcap','gfPe','gfFpe','gfDe','gfGrowth'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('gfGrowthOnly').checked=false;applyGlobalFilter();};
+
+  /* ---------- fund tags on setup cards ---------- */
+  document.querySelectorAll('[data-fundtags]').forEach(box=>{const f=FUND[box.dataset.fundtags];if(!f)return;
+    const t=[];if(f.mcap)t.push(mcapTxt(f.mcap));if(f.pe>0)t.push('P/E '+f.pe.toFixed(1));
+    if(f.growth!=null)t.push('Gr '+(f.growth*100).toFixed(0)+'%');if(f.is_growth)t.push('🚀 growth');
+    box.innerHTML=t.map(x=>`<span class="ftag">${esc(x)}</span>`).join('');});
+
+  /* ---------- movers (sector -> sub-sector) ---------- */
+  function moversTable(rows,horizon){const chg=horizon==='day'?'chg_1d':'chg_5d';
+    let h='<table class="compact"><thead><tr><th>#</th><th>Sym</th><th>Sec</th><th>%</th><th>Close</th></tr></thead><tbody>';
+    const f=(rows||[]).filter(r=>passesFund(r.symbol));
+    if(!f.length)h+='<tr><td colspan="5" class="note">No matches.</td></tr>';
+    f.forEach((r,i)=>{h+=`<tr><td class="mut">${i+1}</td><td><span class="tvsym" data-chart="${esc(r.symbol)}">${esc(r.symbol)}</span>`+
+      `<div class="note">${esc(r.catalyst||r.name||'')}</div></td><td class="mut">${esc(shortSec(r.sector))}</td>`+
+      `<td class="${cls(r[chg])}">${fmtPct(r[chg])}</td><td>${fmtNum(r.close)}</td></tr>`;});
+    return h+'</tbody></table>';}
+  let mvSector='Overall',mvSub=null;
+  function mvKey(){return mvSub?`${mvSector}|||${mvSub}`:mvSector;}
+  function renderMovers(){const blk=MOVERS[mvKey()]||MOVERS['Overall']||{day:{},week:{}};
+    mvDayWin.innerHTML=moversTable(blk.day&&blk.day.winners,'day');
+    mvDayLose.innerHTML=moversTable(blk.day&&blk.day.losers,'day');
+    mvWeekWin.innerHTML=moversTable(blk.week&&blk.week.winners,'week');
+    mvWeekLose.innerHTML=moversTable(blk.week&&blk.week.losers,'week');
+    document.getElementById('moversCrumb').innerHTML=`Showing: <b>${esc(shortSec(mvSector))}</b>`+(mvSub?` › <b>${esc(mvSub)}</b>`:'');
+    bindTerms(document.querySelector('[data-tab="Winners & Losers"]'));}
+
+  /* ---------- options (sector -> sub-sector) ---------- */
+  let optSector='Overall',optSub=null;
+  function renderOptions(){const rows=OPTIONS.filter(r=>(optSector==='Overall'||(r.sector===optSector&&(!optSub||r.industry===optSub)))&&passesFund(r.symbol));
+    let h='<table class="compact"><thead><tr><th>Sym</th><th><span class="term" data-g="bias">Bias</span></th>'+
+      '<th><span class="term" data-g="put_call">P/C</span></th><th><span class="term" data-g="atm_iv">ATM IV</span></th>'+
+      '<th><span class="term" data-g="expected_move">Exp.Move</span></th><th><span class="term" data-g="unusual">Unusual</span></th></tr></thead><tbody>';
+    if(!rows.length)h+='<tr><td colspan="6" class="note">No options data for this filter.</td></tr>';
+    rows.forEach(r=>{h+=`<tr><td><span class="tvsym" data-chart="${esc(r.symbol)}">${esc(r.symbol)}</span></td>`+
+      `<td><span class="pill ${esc(r.bias)}">${esc(r.bias)}</span></td><td>${fmtNum(r.pc_ratio_vol)}</td>`+
+      `<td>${r.atm_iv?fmtNum(r.atm_iv*100)+'%':'—'}</td><td>${fmtNum(r.expected_move_pct)}%</td><td class="mut">${r.unusual_count||0}</td></tr>`;});
+    document.getElementById('optTable').innerHTML=h+'</tbody></table>';
+    document.getElementById('optCrumb').innerHTML=`Showing: <b>${esc(shortSec(optSector))}</b>`+(optSub?` › <b>${esc(optSub)}</b>`:'');
+    bindTerms(document.getElementById('optTable'));}
+
+  /* ---------- sector + sub-sector chip bars ---------- */
+  function chipHTML(label,chg,etf){return `<b>${esc(label)}</b>`+(chg!=null?`<span class="c ${cls(chg)}">${fmtPct(chg)}</span>`:'')+
+    (etf?`<span class="gochart" data-chart="${esc(etf)}" title="open chart">📈</span>`:'');}
+  function buildSectorBar(barId,subBarId,getSec,setSec,onSub){
+    const bar=document.getElementById(barId);bar.innerHTML='';
+    SECTOR_CARDS.forEach(c=>{const chip=document.createElement('div');
+      chip.className='chip'+(c.sector===getSec()?' active':'');
+      chip.innerHTML=chipHTML(shortSec(c.sector),c.chg_1d,SECTOR_ETF[c.sector]);
+      chip.onclick=(e)=>{if(e.target.closest('.gochart'))return;  // chart icon handled separately
+        setSec(c.sector);[...bar.children].forEach(x=>x.classList.remove('active'));chip.classList.add('active');
+        buildSubBar(subBarId,c.sector,onSub);};
+      bar.appendChild(chip);});}
+  function buildSubBar(subBarId,sector,onSub){const sb=document.getElementById(subBarId);
+    const subs=(sector!=='Overall'&&SUBSEC_HIER[sector])||[];
+    if(!subs.length){sb.classList.add('hidden');sb.innerHTML='';onSub(null);return;}
+    sb.classList.remove('hidden');sb.innerHTML='';
+    const all=document.createElement('div');all.className='chip active';all.innerHTML='<b>All '+esc(shortSec(sector))+'</b>';
+    all.onclick=()=>{onSub(null);[...sb.children].forEach(x=>x.classList.remove('active'));all.classList.add('active');};
+    sb.appendChild(all);
+    subs.forEach(s=>{const chip=document.createElement('div');chip.className='chip';
+      chip.innerHTML=chipHTML(s.industry,s.median,null);
+      chip.onclick=()=>{onSub(s.industry);[...sb.children].forEach(x=>x.classList.remove('active'));chip.classList.add('active');};
+      sb.appendChild(chip);});}
+  buildSectorBar('moversBar','moversSubBar',()=>mvSector,s=>{mvSector=s;mvSub=null;renderMovers();},sub=>{mvSub=sub;renderMovers();});
+  buildSectorBar('optBar','optSubBar',()=>optSector,s=>{optSector=s;optSub=null;renderOptions();},sub=>{optSub=sub;renderOptions();});
+
+  /* ---------- sector chart ---------- */
+  if(SECTOR_CHART&&SECTOR_CHART.labels&&window.Chart){new Chart(document.getElementById('sectorChart'),{type:'bar',
+    data:{labels:SECTOR_CHART.labels,datasets:[{data:SECTOR_CHART.values,backgroundColor:SECTOR_CHART.values.map(v=>v>=0?'#3fb950':'#f85149')}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'}},y:{ticks:{color:'#8b949e'}}}}});}
+
+  /* ---------- init ---------- */
+  bindTerms(document);
+  applyGlobalFilter();
 </script>
 </body>
 </html>

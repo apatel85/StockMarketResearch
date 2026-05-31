@@ -62,12 +62,17 @@ class DemoProvider:
 
     def get_fundamentals(self, symbol: str) -> dict:
         rng = np.random.default_rng(abs(hash(symbol)) % 9973)
+        pe = float(rng.uniform(8, 55))
         return {
-            "trailingPE": float(rng.uniform(10, 40)),
+            "trailingPE": pe,
+            "forwardPE": pe * float(rng.uniform(0.7, 1.0)),
             "pegRatio": float(rng.uniform(0.6, 3.0)),
             "profitMargins": float(rng.uniform(-0.05, 0.35)),
+            "revenueGrowth": float(rng.uniform(-0.1, 0.45)),
             "earningsGrowth": float(rng.uniform(-0.2, 0.4)),
             "recommendationMean": float(rng.uniform(1.5, 4.0)),
+            "marketCap": float(rng.integers(2, 3200)) * 1e9,
+            "debtToEquity": float(rng.uniform(5, 220)),
         }
 
     def get_news(self, symbols: List[str], limit: int = 5) -> Dict[str, list]:
